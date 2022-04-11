@@ -1,108 +1,131 @@
-import React, { useEffect, useState } from "react";
-
-//include images into your bundle
-//import rigoImage from "../../img/rigo-baby.jpg";
+import React, { useRef, useState, useEffect } from "react";
 
 //create your first component
 
-export const Home = () => {
-	const [Lista, setLista] = useState([]);
-	const THEurl = "https://assets.breatheco.de/apis/sound/";
-	const [nowPlay, setNowPlay] = useState("");
-	const [temporalIndex, setTemporalIndex] = useState(-1);
-	const AUDIO_TAG = document.querySelector("audio");
+const Home = () => {
+	const [musica, setMusica] = useState([]);
 
 	useEffect(() => {
-		fetch("https://assets.breatheco.de/apis/sound/songs")
-			.then(response => {
-				if (response.ok) {
-					return response.json();
-				}
-				throw Error(response.statusText);
-			})
-			.then(dataAsJson => {
-				setLista(dataAsJson);
-			})
-			.catch(error => {
-				"Looks like there was a problem!", error;
-			});
+		getMusica();
 	}, []);
 
-	const ListaMap = Lista.map((song, index) => {
+	const getMusica = () => {
+		fetch("https://assets.breatheco.de/apis/sound/songs", {
+			method: "GET"
+		})
+			.then(response => {
+				// console.log(response);
+				return response.json();
+			})
+			.then(data => {
+				console.log(data);
+				setMusica(data);
+			})
+			.catch(error => {
+				console.log(error);
+			});
+	};
+
+	let audioRef = useRef();
+
+	const [current, setCurrent] = useState(0);
+	const [isPlaying, setIsPlaying] = useState(false);
+
+	const songURL = musica.map(song => {
+		return "https://assets.breatheco.de/apis/sound/" + song.url;
+	});
+
+	const songs = musica.map((song, index) => {
 		return (
 			<li
-				key={song.url}
-				onClick={() => {
-					let newurl = THEurl.concat(song.url);
-					setNowPlay(newurl);
-					setTemporalIndex(index);
-				}}>
-				{song.name}
+				key={index}
+				className={
+					isPlaying == true && current === index ? "active" : ""
+				}
+				onClick={() => playSong(index)}>
+				{index + 1} {song.name}
 			</li>
 		);
 	});
 
-	function playAudio() {
-		AUDIO_TAG.play();
-	}
+	const playSong = index => {
+		setIsPlaying(true);
+		audioRef.current.src = songURL[index];
+		setCurrent(index);
+		audioRef.current.play();
+	};
 
-	function pauseAudio() {
-		AUDIO_TAG.pause();
-	}
+	const togglePlayPause = () => {
+		setIsPlaying(!isPlaying);
+		audioRef.current.src = songURL[current];
+		isPlaying ? audioRef.current.pause() : audioRef.current.play();
+	};
 
-	function previousSong(songIndex) {
-		// let newurl = THEurl.concat(songList[songIndex - 1].url);
-		// setNowPlay(newurl);
-		// setTemporalIndex(songIndex - 1);
-		let newurl = "";
-		if (Lista[songIndex - 1]) {
-			//if this exists
-			newurl = THEurl.concat(Lista[songIndex - 1].url);
-			setNowPlay(newurl);
-			setTemporalIndex(songIndex - 1);
+	const nextSong = () => {
+		if (current === songs.length - 1) {
+			setCurrent(0);
+			audioRef.current.src = songURL[0];
+			setIsPlaying(true);
+			audioRef.current.play();
 		} else {
-			//no exists (songList[-1])
-			newurl = THEurl.concat(Lista[Lista.length - 1].url);
-			setNowPlay(newurl);
-			setTemporalIndex(Lista.length - 1);
+			audioRef.current.src = songURL[current + 1];
+			setCurrent(current + 1);
+
+			setIsPlaying(true);
+			audioRef.current.play();
 		}
-	}
-	function nextSong(songIndex) {
-		// let newurl = THEurl.concat(songList[songIndex + 1].url);
-		// setNowPlay(newurl);
-		// setTemporalIndex(songIndex + 1);
-		let newurl = "";
-		if (Lista[songIndex + 1]) {
-			//if this exists
-			newurl = THEurl.concat(Lista[songIndex + 1].url);
-			setNowPlay(newurl);
-			setTemporalIndex(songIndex + 1);
+	};
+
+	const previousSong = () => {
+		if (current === 0) {
+			setCurrent(songs.length - 1);
+			audioRef.current.src = songURL[songs.length - 1];
+			setIsPlaying(true);
+			audioRef.current.play();
 		} else {
-			//no exists (songList[+1 de lenght])
-			newurl = THEurl.concat(Lista[0].url);
-			setNowPlay(newurl);
-			setTemporalIndex(0);
+			audioRef.current.src = songURL[current - 1];
+			setCurrent(current - 1);
+			setIsPlaying(true);
+			audioRef.current.play();
 		}
-	}
+	};
+
 	return (
-		<div className="container">
-			<ol className="ListCanciones">{ListaMap}</ol>
-			<audio src={nowPlay} autoPlay />
-			<footer>
-				<button onClick={() => previousSong(temporalIndex)}>
-					<i className="fas fa-backward"></i>
-				</button>
-				<button onClick={playAudio}>
-					<i className="fas fa-play"></i>
-				</button>
-				<button onClick={pauseAudio}>
-					<i className="fas fa-pause"></i>
-				</button>
-				<button onClick={() => nextSong(temporalIndex)}>
-					{<i className="fas fa-forward"></i>}
-				</button>
-			</footer>
-		</div>
+		<>
+			<div className="container-fluid">
+				<div className="songs">
+					<ul>{songs}</ul>
+				</div>
+				<div className="buttonsNav">
+					<button
+						className="btn"
+						type="button"
+						name="previous"
+						onClick={previousSong}>
+						<i className="fas fa-caret-square-left"></i>
+					</button>
+					<button
+						className="btn"
+						type="button"
+						name="play"
+						onClick={togglePlayPause}>
+						{isPlaying ? (
+							<i className="fas fa-pause-circle"></i>
+						) : (
+							<i className="fas fa-play"></i>
+						)}
+					</button>
+					<button
+						className="btn"
+						type="button"
+						name="next"
+						onClick={nextSong}>
+						<i className="fas fa-caret-square-right"></i>
+					</button>
+					<audio ref={audioRef} />
+				</div>
+			</div>
+		</>
 	);
 };
 

@@ -1,4 +1,5 @@
 @import "~bootstrap/scss/bootstrap.scss";
+
 * {
     margin: 0;
     padding: 0;
@@ -10,7 +11,7 @@ html, body {
 
 .container-fluid {
     height: 100%;
-    background-color: red;
+    background-color: black;
     margin: 0;
     padding: 0;
 }
@@ -63,8 +64,9 @@ li:hover, li:active{
 }
 
 .buttonsNav > button {
-    color:white; 
+    color: green; 
 }
+
 
 /* 
 
